@@ -67,6 +67,7 @@ public:
     void parentMoved() { m_button.parentMoved(); }
 
 private:
+    bool showSeconds() const;
     void updateTime();
     void update(FbTk::Subject *subj);
     void renderTheme(unsigned char alpha);
@@ -86,3 +87,11 @@ private:
 };
 
 #endif // CLOCKTOOL_HH
+
+/**
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 79
+ * End:
+ */

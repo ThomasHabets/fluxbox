@@ -157,10 +157,22 @@ ClockTool::ClockTool(const FbTk::FbWindow &parent,
 
     _FB_USES_NLS;
 
-    // setup timer to check the clock every 0.01 second
-    // if nothing has changed, it wont update the graphics
-    m_timer.setInterval(1);
-    // m_timer.setTimeout(delay); // don't need to set timeout on interval timer
+    // wake up at next minute-change
+    timeval now;
+    timeval next;
+    gettimeofday(&now, 0);
+    next.tv_sec = 60 - (now.tv_sec % 60) - 1;
+    next.tv_usec = 1000000 - now.tv_usec;
+    if (next.tv_usec >= 1000000) {
+        next.tv_sec++;
+        next.tv_usec -= 1000000;
+    }
+    if (showSeconds()) {
+        // no, wake up at next second-change
+        next.tv_sec = 0;
+    }
+    m_timer.setTimeout(next.tv_sec * 1000 + next.tv_usec / 1000);
+
     FbTk::RefCount<FbTk::Command<void> > update_graphic(new FbTk::SimpleCommand<ClockTool>(*this,
                                                                                     &ClockTool::updateTime));
     m_timer.setCommand(update_graphic);
@@ -256,11 +268,39 @@ unsigned int ClockTool::height() const {
     return m_button.height();
 }
 
+/**
+ * return true if clock shows seconds. If clock doesn't show seconds then
+ * there is no need to wake up every second to redraw the clock.
+ */
+bool ClockTool::showSeconds() const {
+    return  m_timeformat->find(std::string("%c")) != -1
+        || m_timeformat->find(std::string("%r")) != -1
+        || m_timeformat->find(std::string("%s")) != -1
+        || m_timeformat->find(std::string("%S")) != -1
+        || m_timeformat->find(std::string("%T")) != -1
+        || m_timeformat->find(std::string("%X")) != -1
+        || m_timeformat->find(std::string("%+")) != -1;
+}
+
 void ClockTool::updateTime() {
     // update clock
     timeval now;
     gettimeofday(&now, 0);
     time_t the_time = now.tv_sec;
+
+    // wake up at next minute-change
+    timeval next;
+    next.tv_sec = 60 - (now.tv_sec % 60) - 1;
+    next.tv_usec = 1000000 - now.tv_usec;
+    if (next.tv_usec >= 1000000) {
+        next.tv_sec++;
+        next.tv_usec -= 1000000;
+    }
+    if (showSeconds()) {
+        // no, wake up at next second-change
+        next.tv_sec = 0;
+    }
+    m_timer.setTimeout(next.tv_sec * 1000 + next.tv_usec / 1000);
 
     if (the_time != -1) {
         char time_string[255];
@@ -327,3 +367,11 @@ void ClockTool::setOrientation(FbTk::Orientation orient) {
     m_button.setOrientation(orient);
     ToolbarItem::setOrientation(orient);
 }
+
+/**
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 79
+ * End:
+ */

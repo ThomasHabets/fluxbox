@@ -53,6 +53,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <typeinfo>
+#include <cstring>
 
 using std::cout;
 using std::cerr;
